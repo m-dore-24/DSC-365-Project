@@ -1,0 +1,282 @@
+---
+title: "Explaining Deviation from Sentencing Guidelines in Federal Criminal Court from 2018-2019"
+format: pptx
+editor: visual
+---
+
+```{r}
+
+#|echo: false
+#|message: false
+#|warning: false
+library(haven)
+X37990_0001_Data <- read_sav("ICPSR_37990/DS0001/37990-0001-Data.sav")
+library(dplyr)
+library(tidyverse)
+
+fed_sentence <- X37990_0001_Data %>% 
+  select(USSCIDN,NEWRACE,MONSEX,AGE, CITIZEN, NUMDEPEN ,OFFGUIDE, CIRCDIST, XFOLSOR,DISPOSIT,PCNTDEPT,SUPERMAX, SUPERMIN, TOTPRISN )
+
+fed_sentence <- fed_sentence %>% 
+  replace_na(list(PCNTDEPT = 0))
+
+fed_sentence_clean <- fed_sentence %>% 
+  filter(DISPOSIT >0) %>% 
+  filter(DISPOSIT<5) %>% 
+  mutate(
+    per_change = case_when (
+      !is.na(SUPERMAX) &
+        !is.na(SUPERMIN) &
+        as.numeric(TOTPRISN) > as.numeric(SUPERMAX) ~ (((as.numeric(TOTPRISN)- as.numeric(SUPERMAX))/ as.numeric (SUPERMAX))*100),
+      as.numeric(TOTPRISN) < as.numeric(SUPERMIN) ~ (((as.numeric(TOTPRISN)-as.numeric(SUPERMIN))/as.numeric(SUPERMIN))*100),
+      TRUE ~ 0 #Entered code into ChatGPT and asked why it was throwing an error, helped me figure out how to use !is and case_when() https://chatgpt.com/s/t_6aac1c4d3f908191b56accf5c5d3fd61
+      ),
+    newrace_clean = recode(
+      as.character(NEWRACE),
+      `1` = "White", 
+      `2` = "Black", 
+      `3` = "Hispanic", 
+      `6` = "Other",
+      .default = NA_character_
+    ), 
+    monsex_clean = recode(
+      as.character(MONSEX), 
+      `0` = "Male", 
+      `1`= "Female",
+      .default = NA_character_
+    ), 
+    offense_clean = recode(
+      as.character(OFFGUIDE),
+      `1` = "Administration of Justice", 
+      `2` = "Antitrust",
+      `3` = "Arson",
+      `4` = "Assault", 
+      `5` = "Bribery/Corruption", 
+      `6` = "Burglary/Trespass", 
+      `7` = "Child Pornography", 
+      `8` = "Commercialized Vice", 
+      `9` = "Drug Posession",
+      `10` = "Drug Trafficking", 
+      `11` = "Enviromental", 
+      `12` = "Extortion/Racketering", 
+      `13` = "Firearms", 
+      `14` = "Food and Drug", 
+      `15` = "Forgery/Counter/Copyright", 
+      `16` = "Fraud/Theft/Embezzlement",
+      `17` = "Immigration", 
+      `18`= "Individual Rights",
+      `19` = "Kidnapping", 
+      `20` = "Manslaughter", 
+      `21`="Money Launder", 
+      `22` = "Murder", 
+      `23`="National Defense", 
+      `24` = "Obscenity/Other Sex Offense",
+      `25` = "Prison Offenses", 
+      `26` = "Robbery",
+      `27`="Sex Abuse", 
+      `28` = "Stalking/Harassment", 
+      `29` = "Tax",
+      .default = NA_character_
+    ),
+    disposit_clean = recode(
+      as.character(DISPOSIT),
+      `0` = "No Imprisonment",
+      `1` = "Guilty Plea", 
+      `2` = "Nolo Contendere", 
+      `3` = "Jury Trial",
+      `4` = "Trial by Judge/Bench Trial" ,
+      .default = NA_character_
+    ), 
+    region = recode(
+      as.character(CIRCDIST), 
+      `1` = "Southeast", 
+      `2` = "Northeast", 
+      `3` = "Northeast",
+      `4` = "Northeast",
+      `6` = "Northeast", 
+      `7`= "Northeast", 
+      `8` = "Northeast", 
+      `9` = "Northeast", 
+      `10` = "Northeast", 
+      `11` = "Northeast", 
+      `12` = "Northeast", 
+      `13` = "Northeast", 
+      `14` = "Northeast",
+      `15` = "Northeast",
+      `16` = "Northeast", 
+      `17` = "Northeast", 
+      `19` = "Northeast", 
+      `20` = "Southeast",
+      `21` = "Southeast",
+      `22` = "Southeast", 
+      `23` = "Southeast",
+      `24` = "Southeast",
+      `25` = "Southeast",
+      `26` = "Southeast",
+      `27` = "Southeast",
+      `28` = "Southeast", 
+      `29` = "Southeast", 
+      `30` = "Southeast", 
+      `31` = "Southeast",
+      `32` = "Southeast",
+      `33` = "Southwest",
+      `34` = "Southwest",
+      `35` = "Southwest",
+      `36` = "Southwest",
+      `37` = "Southeast",
+      `38` = "Southeast",
+      `39`= "Midwest", 
+      `40`= "Midwest",
+      `41`= "Midwest",
+      `42`= "Midwest",
+      `43`= "Southeast",
+      `44`= "Southeast", 
+      `45` = "Southeast",
+      `46` = "Midwest",
+      `47` = "Midwest",
+      `48` = "Midwest",
+      `49` = "Midwest", 
+      `50` = "Midwest",
+      `51` = "Midwest", 
+      `52` = "Midwest",
+      `53` = "Southeast", 
+      `54` = "Southeast", 
+      `55` = "Midwest",
+      `56` = "Midwest",
+      `57` = "Midwest", 
+      `58` = "Midwest",
+      `59` = "Midwest", 
+      `60` = "Midwest", 
+      `61`= "Midwest", 
+      `62`= "Midwest",
+      `63` = "West",
+      `64` = "Southwest", 
+      `65` = "West", 
+      `66` = "West", 
+      `67` = "West",
+      `68` = "West",
+      `70` = "West", 
+      `71` = "West", 
+      `72` = "West", 
+      `73` = "West",
+      `75` = "West",
+      `76` = "West", 
+      `77`= "West", 
+      `78` = "West", 
+      `79` = "Midwest",
+      `80` = "Southwest",
+      `81` = "Southwest",
+      `82` = "Southwest", 
+      `83`  = "Southwest",
+      `84` = "West", 
+      `85` = "West", 
+      `86` = "Southeast",
+      `87` = "Southeast", 
+      `88` = "Southeast", 
+      `89` = "Southeast", 
+      `90` = "Southeast", 
+      `91` = "Southeast",
+      `92` = "Southeast", 
+      `93` = "Southeast", 
+      `94`= "Southeast",
+      .default = NA_character_
+    ),
+    citizen_clean = recode(
+      as.character(CITIZEN),
+      `1` = "US Citizen",
+      `2` = "Resident/Legal Alien",
+      `3` = "Illegal Alien",
+      `4` = "Status Unknown",
+      `5` = "Extradited Alien",
+      .default = NA_character_))
+
+
+ready_fed_sentence <- fed_sentence_clean %>% 
+  filter(!is.na(newrace_clean)) %>% 
+  filter(!is.na(monsex_clean)) %>% 
+  filter(!is.na(AGE)) %>% 
+  filter(!is.na(citizen_clean)) %>% 
+  filter(!is.na(NUMDEPEN)) %>% 
+  filter(!is.na(disposit_clean)) %>% 
+  filter(!is.na(offense_clean)) %>% 
+  filter(!is.na(XFOLSOR)) %>% 
+  filter(!is.na(per_change)) %>% 
+  filter(!is.na(region)) %>% 
+  select(newrace_clean,monsex_clean,AGE, citizen_clean,NUMDEPEN, region,disposit_clean,offense_clean, XFOLSOR, per_change)
+
+
+sampled_fed <- ready_fed_sentence[sample.int(nrow(ready_fed_sentence), 2000),] #I originally had around 75,000 observations even after pulling out all the NAs and it made the box plots and graphs in general basically unreadable, so I decided to randomly sample a smaller amount of observations. https://www.learningtree.com/blog/randomly-sampling-rows-r/
+```
+
+------------------------------------------------------------------------
+
+## How can we explain the variation in departure from sentencing guidelines in federal criminal court?
+
+- Federal Guidelines: Provide structure while allowing for judicial freedom
+
+  - Considers: offense, criminal history, mitigating or extreme factors
+
+- Consistent rulings across regions, defendant demographics, and non-legal factors
+
+## Federal Sentencing Data
+
+- United States Sentencing Commission, DOJ
+
+<!-- -->
+
+- 574 variables, 76538 observations -\> 10 variables, 3000 observations
+
+- Concerns:
+
+  - recoding of variables and values
+
+  - citizenship variable
+
+  - sampling/size
+
+  - attorney
+
+## Variables
+
+- Response Variable: Percent Departure from Federal Sentencing Guidelines (numeric)
+
+- Explanatory Variables:
+
+  - Defendant Characteristics
+
+    - Numeric: Age, Number of Dependents
+
+    - Categorical: Citizenship status, Race, Sex
+
+  - Court Characteristics:
+
+    - Numerical: Offense Level
+
+  - Categorical: Offense, Region of Court, Disposition
+
+------------------------------------------------------------------------
+
+```{R}
+#| echo: false
+#| message: false
+#| warning: false
+ggplot(data = sampled_fed, aes (x = newrace_clean, y = per_change)) +
+  geom_boxplot(aes(color = newrace_clean))+
+  facet_wrap(~region)+
+  coord_cartesian(ylim = c(-100,400))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  xlab("Defendant Race")+
+  ylab("Departure from Sentencing Guidelines (%)")+
+  labs(color = "Race/Ethnicity")+
+  ggtitle("Relationship between Defendant Race and Departure from Sentencing Guidelines Across Regions")
+```
+
+```{r}
+ggplot(data = sampled_fed, aes(x = XFOLSOR, y= per_change))+
+  geom_smooth()+
+  facet_wrap(~newrace_clean)+
+  xlab("Offense Level")+
+  ylab("Departure from Sentencing Guidelines (%)")+
+  ggtitle("Relationship between Departure from Sentencing Guidelines and Final Calculated Offense Level Across Race")
+
+```
